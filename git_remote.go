@@ -3,13 +3,18 @@ package main
 import (
 	"errors"
 	"fmt"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
 	giturls "github.com/whilp/git-urls"
-	neturl "net/url"
+)
+
+const (
+	gitConfigUrlTypeName  string = "gh-open.urltype"
+	gitConfigProtocolName string = "gh-open.protocol"
 )
 
 // GitRemote is a struct
@@ -57,6 +62,11 @@ func (r GitRemote) remoteURL(branch string, line string) (string, error) {
 		return remote, err
 	}
 
+	// If it cannot be determined from the remote domain,
+	//   read the setting from git config and make a judgment based on it.
+	urlType := r.git.getConfig(gitConfigUrlTypeName, "")
+	scheme := r.git.getConfig(gitConfigProtocolName, "https")
+
 	url, err := giturls.Parse(remote)
 	if err != nil {
 		return "", err
@@ -65,7 +75,7 @@ func (r GitRemote) remoteURL(branch string, line string) (string, error) {
 	// remove .git from /inouet/gh-open.git
 	path := strings.TrimSuffix(url.Path, ".git")
 	newURL := neturl.URL{
-		Scheme: "https",
+		Scheme: scheme,
 		Host:   url.Host,
 		Path:   path,
 	}
@@ -81,7 +91,7 @@ func (r GitRemote) remoteURL(branch string, line string) (string, error) {
 		}
 	}
 
-	remoteURL, err := buildURL(newURL, r.path, branch, line)
+	remoteURL, err := buildURL(newURL, r.path, branch, line, urlType)
 	if err != nil {
 		return "", err
 	}

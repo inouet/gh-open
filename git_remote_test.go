@@ -52,7 +52,7 @@ func TestRemoteUrl(t *testing.T) {
 	for name, c := range cases {
 		gr, err := newGitRemote(c.path)
 		if err != nil {
-			t.Fatal()
+			t.Fatal(err)
 		}
 		got, _ := gr.remoteURL(c.branch, c.line)
 		if got != c.want {
@@ -113,15 +113,42 @@ func TestRemoteUrlFunctional(t *testing.T) {
 		path := filepath.Join(gitDir, c.path)
 		gr, err := newGitRemote(path)
 		if err != nil {
-			t.Fatal()
+			t.Fatal(err)
 		}
 		got, err := gr.remoteURL(c.branch, c.line)
 		if err != nil {
-			t.Fatal()
+			t.Fatal(err)
 		}
 		if got != c.want {
 			t.Errorf("%s want '%s', got '%s'\n", name, c.want, got)
 		}
+	}
+}
+
+func TestConfig(t *testing.T) {
+	testDir := mkTempDir()
+	defer os.RemoveAll(testDir)
+
+	git, _ := newGit(testDir)
+	git.clone("https://github.com/githubtraining/github-cheat-sheet.git")
+
+	path := filepath.Join(testDir, "/github-cheat-sheet")
+	git, _ = newGit(path)
+
+	// set config
+	git.exec("config", gitConfigUrlTypeName, "bitbucket.org")
+	git.exec("config", gitConfigProtocolName, "http")
+
+	gr, err := newGitRemote(filepath.Join(path, "LICENSE"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, _ := gr.remoteURL("master", "3-4")
+
+	// Expect bitbucket style url and http protocol
+	want := "http://github.com/githubtraining/github-cheat-sheet/src/master/LICENSE#lines-3:4"
+	if got != want {
+		t.Errorf("want '%s', got '%s'\n", want, got)
 	}
 }
 
