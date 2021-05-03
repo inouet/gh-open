@@ -31,12 +31,14 @@ func buildBitbucketURL(baseURL url.URL, filePath, branch string, line string) st
 	filePath = strings.TrimLeft(filePath, "/")
 
 	lineStr := ""
-	arr := strings.Split(line, "-")
-	if len(arr) == 1 {
-		lineStr = fmt.Sprintf("#lines-%s", arr[0])
-	}
-	if len(arr) == 2 {
-		lineStr = fmt.Sprintf("lines-%s:%s", arr[0], arr[1])
+	if line != "" {
+		arr := strings.Split(line, "-")
+		if len(arr) == 1 {
+			lineStr = fmt.Sprintf("lines-%s", arr[0])
+		}
+		if len(arr) == 2 {
+			lineStr = fmt.Sprintf("lines-%s:%s", arr[0], arr[1])
+		}
 	}
 	baseURL.Path = fmt.Sprintf("%s/src/%s/%s", baseURL.Path, branch, filePath)
 	baseURL.Fragment = lineStr
