@@ -61,12 +61,12 @@ func (git Git) clone(repo string) (string, error) {
 }
 
 // git config name
-func (git Git) getConfig(name, defaultValue string) (string, error) {
+func (git Git) getConfig(name, defaultValue string) string {
 	configValue, err := git.exec("config", "--get", name)
 	if err != nil {
-		return defaultValue, nil
+		return defaultValue
 	}
-	return configValue, nil
+	return configValue
 }
 
 func (git Git) exec(args ...string) (string, error) {
