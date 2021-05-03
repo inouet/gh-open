@@ -12,6 +12,11 @@ import (
 	giturls "github.com/whilp/git-urls"
 )
 
+const (
+	gitConfigUrlTypeName  string = "gh-open.urltype"
+	gitConfigProtocolName string = "gh-open.protocol"
+)
+
 // GitRemote is a struct
 type GitRemote struct {
 	git  *Git
@@ -59,8 +64,8 @@ func (r GitRemote) remoteURL(branch string, line string) (string, error) {
 
 	// If it cannot be determined from the remote domain,
 	//   read the setting from git config and make a judgment based on it.
-	urlType := r.git.getConfig("gh-open.urltype", "")
-	scheme := r.git.getConfig("gh-open.protocol", "https")
+	urlType := r.git.getConfig(gitConfigUrlTypeName, "")
+	scheme := r.git.getConfig(gitConfigProtocolName, "https")
 
 	url, err := giturls.Parse(remote)
 	if err != nil {
