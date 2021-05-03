@@ -125,6 +125,33 @@ func TestRemoteUrlFunctional(t *testing.T) {
 	}
 }
 
+func TestConfig(t *testing.T) {
+	testDir := mkTempDir()
+	defer os.RemoveAll(testDir)
+
+	git, _ := newGit(testDir)
+	git.clone("https://github.com/githubtraining/github-cheat-sheet.git")
+
+	path := filepath.Join(testDir, "/github-cheat-sheet")
+	git, _ = newGit(path)
+
+	// set config
+	git.exec("config", "gh-open.urltype", "bitbucket.org")
+	git.exec("config", "gh-open.protocol", "http")
+
+	gr, err := newGitRemote(filepath.Join(path, "LICENSE"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, _ := gr.remoteURL("master", "3-4")
+
+	// Expect bitbucket style url and http protocol
+	want := "http://github.com/githubtraining/github-cheat-sheet/src/master/LICENSE#lines-3:4"
+	if got != want {
+		t.Errorf("want '%s', got '%s'\n", want, got)
+	}
+}
+
 func TestNewGitRemote(t *testing.T) {
 
 	emptyDir := mkTempDir()
