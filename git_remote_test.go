@@ -52,7 +52,7 @@ func TestRemoteUrl(t *testing.T) {
 	for name, c := range cases {
 		gr, err := newGitRemote(c.path)
 		if err != nil {
-			t.Fatal()
+			t.Fatal(err)
 		}
 		got, _ := gr.remoteURL(c.branch, c.line)
 		if got != c.want {
@@ -113,11 +113,11 @@ func TestRemoteUrlFunctional(t *testing.T) {
 		path := filepath.Join(gitDir, c.path)
 		gr, err := newGitRemote(path)
 		if err != nil {
-			t.Fatal()
+			t.Fatal(err)
 		}
 		got, err := gr.remoteURL(c.branch, c.line)
 		if err != nil {
-			t.Fatal()
+			t.Fatal(err)
 		}
 		if got != c.want {
 			t.Errorf("%s want '%s', got '%s'\n", name, c.want, got)
