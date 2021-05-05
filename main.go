@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
+	"os"
+
 	flags "github.com/jessevdk/go-flags"
 	"github.com/skratchdot/open-golang/open"
-	"os"
-	"strings"
 )
 
 type options struct {
-	Line     string `short:"l" long:"line" description:"Line number (10 or 10-20)"`
+	Line     string `short:"l" long:"line" description:"Line number (eg: 10 or 10-20)"`
 	Branch   string `short:"b" long:"branch" description:"Branch name"`
 	PrintURL bool   `short:"p" long:"print" description:"Print url"`
 }
@@ -44,8 +44,8 @@ func realMain() int {
 
 	objectPath := args[0]
 
-	line := strings.TrimSpace(opts.Line)
-	if !validateLine(line) {
+	line1, line2, err := getLineOption(opts.Line)
+	if err != nil {
 		printError(fmt.Errorf("invalid line format"))
 		return statusError
 	}
@@ -57,7 +57,7 @@ func realMain() int {
 		return statusError
 	}
 
-	remoteURL, err := gr.remoteURL(opts.Branch, line)
+	remoteURL, err := gr.remoteURL(opts.Branch, line1, line2)
 	if err != nil {
 		printError(err)
 		return statusError

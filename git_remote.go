@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	giturls "github.com/whilp/git-urls"
@@ -56,7 +57,7 @@ func newGitRemote(objectPath string) (*GitRemote, error) {
 	return &gitRemote, nil
 }
 
-func (r GitRemote) remoteURL(branch string, line string) (string, error) {
+func (r GitRemote) remoteURL(branch string, line1, line2 int) (string, error) {
 	remote, err := r.git.getRemoteOriginURL()
 	if err != nil {
 		return remote, err
@@ -91,7 +92,7 @@ func (r GitRemote) remoteURL(branch string, line string) (string, error) {
 		}
 	}
 
-	remoteURL, err := buildURL(newURL, r.path, branch, line, urlType)
+	remoteURL, err := buildURL(newURL, r.path, branch, line1, line2, urlType)
 	if err != nil {
 		return "", err
 	}
@@ -136,13 +137,23 @@ func relativePath(obj1, obj2 string) (string, error) {
 }
 
 // valid format: 20 or 20-30
-func validateLine(line string) bool {
+func getLineOption(line string) (int, int, error) {
+	line = strings.TrimSpace(line)
+	line1, line2 := 0, 0
 	if line == "" {
-		return true
+		return line1, line2, nil
 	}
 	matched, err := regexp.MatchString(`^([0-9]+|[0-9]+-[0-9]+)$`, line)
-	if err != nil {
-		return false
+	if err != nil || !matched {
+		return line1, line2, errors.New("invalid line format")
 	}
-	return matched
+	arr := strings.Split(line, "-")
+	if len(arr) == 1 {
+		line1, _ = strconv.Atoi(arr[0])
+	}
+	if len(arr) == 2 {
+		line1, _ = strconv.Atoi(arr[0])
+		line2, _ = strconv.Atoi(arr[1])
+	}
+	return line1, line2, nil
 }
