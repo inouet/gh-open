@@ -23,28 +23,32 @@ func TestRemoteUrl(t *testing.T) {
 	cases := map[string]struct {
 		path   string
 		branch string
-		line   string
+		line1  int
+		line2  int
 		want   string
 	}{
 		"root-dir":
 		{
 			path:   "./",
 			branch: "",
-			line:   "",
+			line1:  0,
+			line2:  0,
 			want:   "https://github.com/inouet/gh-open",
 		},
 		"root-dir-master":
 		{
 			path:   "./",
 			branch: "master",
-			line:   "",
+			line1:  0,
+			line2:  0,
 			want:   "https://github.com/inouet/gh-open/tree/master/",
 		},
 		"readme.md":
 		{
 			path:   "./README.md",
 			branch: "master",
-			line:   "10",
+			line1:  10,
+			line2:  0,
 			want:   "https://github.com/inouet/gh-open/tree/master/README.md#L10",
 		},
 	}
@@ -54,7 +58,7 @@ func TestRemoteUrl(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		got, _ := gr.remoteURL(c.branch, c.line)
+		got, _ := gr.remoteURL(c.branch, c.line1, c.line2)
 		if got != c.want {
 			t.Errorf("%s want '%s', got '%s'\n", name, c.want, got)
 		}
@@ -72,7 +76,8 @@ func TestRemoteUrlFunctional(t *testing.T) {
 		repoDir string
 		path    string
 		branch  string
-		line    string
+		line1   int
+		line2   int
 		want    string
 	}{
 		"github-cheat-sheet":
@@ -81,8 +86,9 @@ func TestRemoteUrlFunctional(t *testing.T) {
 			repoDir: "github-cheat-sheet",
 			path:    "LICENSE",
 			branch:  "master",
-			line:    "3-4",
-			want:    "https://github.com/githubtraining/github-cheat-sheet/tree/master/LICENSE#L3-4",
+			line1:   3,
+			line2:   4,
+			want:    "https://github.com/githubtraining/github-cheat-sheet/tree/master/LICENSE#L3-L4",
 		},
 		"bitbucket-test":
 		{
@@ -90,7 +96,8 @@ func TestRemoteUrlFunctional(t *testing.T) {
 			repoDir: "bitbucketstationlocations",
 			path:    "README.txt",
 			branch:  "master",
-			line:    "2-4",
+			line1:   2,
+			line2:   4,
 			want:    "https://bitbucket.org/atn13/bitbucketstationlocations/src/master/README.txt#lines-2:4",
 		},
 		"gitlab-gitlab-examples-docker":
@@ -99,8 +106,9 @@ func TestRemoteUrlFunctional(t *testing.T) {
 			repoDir: "docker",
 			path:    "Dockerfile",
 			branch:  "master",
-			line:    "1",
-			want:    "https://gitlab.com/gitlab-examples/docker/-/blob/master/Dockerfile#L1",
+			line1:   1,
+			line2:   2,
+			want:    "https://gitlab.com/gitlab-examples/docker/-/blob/master/Dockerfile#L1-2",
 		},
 	}
 
@@ -115,7 +123,7 @@ func TestRemoteUrlFunctional(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		got, err := gr.remoteURL(c.branch, c.line)
+		got, err := gr.remoteURL(c.branch, c.line1, c.line2)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -143,7 +151,7 @@ func TestConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got, _ := gr.remoteURL("master", "3-4")
+	got, _ := gr.remoteURL("master", 3, 4)
 
 	// Expect bitbucket style url and http protocol
 	want := "http://github.com/githubtraining/github-cheat-sheet/src/master/LICENSE#lines-3:4"
@@ -213,20 +221,25 @@ func TestRelativePath(t *testing.T) {
 	}
 }
 
-func TestValidateLine(t *testing.T) {
+func TestGetLineOption(t *testing.T) {
 	cases := []struct {
-		line string
-		want bool
+		input     string
+		wantLine1 int
+		wantLine2 int
+		wantErr   bool
 	}{
-		{line: "", want: true},
-		{line: "3", want: true},
-		{line: "3-10", want: true},
-		{line: "3-", want: false},
+		{input: "", wantLine1: 0, wantLine2: 0, wantErr: false},
+		{input: "3", wantLine1: 3, wantLine2: 0, wantErr: false},
+		{input: "3-10", wantLine1: 3, wantLine2: 10, wantErr: false},
+		{input: "3-", wantLine1: 0, wantLine2: 0, wantErr: true},
 	}
 	for _, c := range cases {
-		got := validateLine(c.line)
-		if got != c.want {
-			t.Errorf("'%s' want %v, got %v\n", c.line, c.want, got)
+		line1, line2, err := getLineOption(c.input)
+		if c.wantErr && err == nil {
+			t.Errorf("'%s' wantErr %v, got %v\n", c.input, c.wantErr, err)
+		}
+		if line1 != c.wantLine1 || line2 != c.wantLine2 {
+			t.Errorf("'%s' wantErr %v, got %v\n", c.input, c.wantErr, err)
 		}
 	}
 }
