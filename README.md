@@ -67,8 +67,27 @@ $ go get -u github.com/inouet/gh-open
 
 (TODO)
 
+## Configuration
+
+Since the remote url is automatically generated from the domain output by `git config remote.origin.url`,
+basically no configuration is required.
+
+However, for example, if you are hosting GitHub Enterprise or GitLab in your own domain, it cannot judge,
+so you can assist the judgment by setting as follows.
+
+```
+$ git config gh-open.urltype github.com
+```
+
+If you are using the http protocol, set as follows.
+
+```
+$ git config gh-open.protocol http
+```
+
+
 ## Supported services
 
-* https://github.com/ (TODO: GHE)
+* https://github.com/
 * https://gitlab.com/
 * https://bitbucket.org/
