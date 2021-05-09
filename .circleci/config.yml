@@ -32,7 +32,7 @@ jobs:
       - run: go get github.com/mitchellh/gox
       - run: go get github.com/tcnksm/ghr
       - run: gox -verbose --osarch "darwin/amd64 linux/amd64 windows/amd64" -output "${GOPATH}/pkg/gh-open/gh-open_{{.OS}}_{{.Arch}}"  ./ ./...
-      - run: find ${GOPATH}/pkg/gh-open/ -name "gh-open_*" -exec zip -m {}.zip {} \;
+      - run: find ${GOPATH}/pkg/gh-open/ -name "gh-open_*" -exec zip -j -m {}.zip {} \;
       - run: ghr -u $CIRCLE_PROJECT_USERNAME $CIRCLE_TAG $GOPATH/pkg/gh-open/
 
 workflows:
