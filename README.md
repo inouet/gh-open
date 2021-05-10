@@ -61,11 +61,19 @@ $ go get -u github.com/inouet/gh-open
 
 ### Mac user:
 
-(TODO)
+
+If you are on macOS and using Homebrew, you can install gh-open with the following command:
+
+```
+$ brew tap inouet/gh-open
+$ brew install gh-open
+```
+
 
 ### Download binary:
 
-(TODO)
+You can download the binary from [Releases Page](https://github.com/inouet/gh-open/releases).
+
 
 ## Configuration
 
