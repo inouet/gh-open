@@ -1,10 +1,14 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"net/url"
+	"regexp"
 	"strings"
+)
+
+var (
+	googlesourceRegexp = regexp.MustCompile("^[a-zA-Z0-9][a-zA-Z0-9-]{1,61}[a-zA-Z0-9]\\.googlesource\\.com$")
 )
 
 type buildURLFunc func(url url.URL, filePath, branch string, line1, line2 int) string
@@ -62,6 +66,21 @@ func buildGitlabURL(baseURL url.URL, filePath, branch string, line1, line2 int) 
 	return baseURL.String()
 }
 
+// buildGooglesourceURL build URL for *.googlesource.com
+//  Format: https://code.googlesource.com/google-api-go-client/+/master/README.md#2
+func buildGooglesourceURL(baseURL url.URL, filePath, branch string, line1, line2 int) string {
+	filePath = strings.TrimLeft(filePath, "/")
+
+	lineStr := ""
+	if line1 != 0 {
+		lineStr = fmt.Sprintf("%d", line1)
+	}
+	baseURL.Path = fmt.Sprintf("%s/+/%s/%s", baseURL.Path, branch, filePath)
+	baseURL.Fragment = lineStr
+
+	return baseURL.String()
+}
+
 func buildURL(baseURL url.URL, path, branch string, line1, line2 int, urlType string) (string, error) {
 	buildFunc, err := getGitURLBuilder(baseURL, urlType)
 	if err != nil {
@@ -73,17 +92,22 @@ func buildURL(baseURL url.URL, path, branch string, line1, line2 int, urlType st
 }
 
 func getGitURLBuilder(baseURL url.URL, urlType string) (buildURLFunc, error) {
-	host := baseURL.Host
+	host := baseURL.Hostname()
 	if urlType != "" {
 		host = urlType
 	}
 	switch host {
-	case "bitbucket.org":
-		return buildBitbucketURL, nil
-	case "gitlab.com":
-		return buildGitlabURL, nil
 	case "github.com":
 		return buildGithubURL, nil
+	case "gitlab.com":
+		return buildGitlabURL, nil
+	case "bitbucket.org":
+		return buildBitbucketURL, nil
 	}
-	return nil, errors.New("unknown git service")
+	// *.googlesource.com (eg: code.googlesource.com)
+	switch {
+	case googlesourceRegexp.MatchString(host):
+		return buildGooglesourceURL, nil
+	}
+	return nil, fmt.Errorf("unknown git service: '%s'", host)
 }

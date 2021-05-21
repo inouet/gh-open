@@ -27,24 +27,21 @@ func TestRemoteUrl(t *testing.T) {
 		line2  int
 		want   string
 	}{
-		"root-dir":
-		{
+		"root-dir": {
 			path:   "./",
 			branch: "",
 			line1:  0,
 			line2:  0,
 			want:   "https://github.com/inouet/gh-open",
 		},
-		"root-dir-master":
-		{
+		"root-dir-master": {
 			path:   "./",
 			branch: "master",
 			line1:  0,
 			line2:  0,
 			want:   "https://github.com/inouet/gh-open/tree/master/",
 		},
-		"readme.md":
-		{
+		"readme.md": {
 			path:   "./README.md",
 			branch: "master",
 			line1:  10,
@@ -80,8 +77,7 @@ func TestRemoteUrlFunctional(t *testing.T) {
 		line2   int
 		want    string
 	}{
-		"github-cheat-sheet":
-		{
+		"github-cheat-sheet": {
 			repo:    "https://github.com/githubtraining/github-cheat-sheet.git",
 			repoDir: "github-cheat-sheet",
 			path:    "LICENSE",
@@ -90,8 +86,7 @@ func TestRemoteUrlFunctional(t *testing.T) {
 			line2:   4,
 			want:    "https://github.com/githubtraining/github-cheat-sheet/tree/master/LICENSE#L3-L4",
 		},
-		"bitbucket-test":
-		{
+		"bitbucket-test": {
 			repo:    "https://bitbucket.org/atn13/bitbucketstationlocations.git",
 			repoDir: "bitbucketstationlocations",
 			path:    "README.txt",
@@ -100,8 +95,7 @@ func TestRemoteUrlFunctional(t *testing.T) {
 			line2:   4,
 			want:    "https://bitbucket.org/atn13/bitbucketstationlocations/src/master/README.txt#lines-2:4",
 		},
-		"gitlab-gitlab-examples-docker":
-		{
+		"gitlab-gitlab-examples-docker": {
 			repo:    "https://gitlab.com/gitlab-examples/docker.git",
 			repoDir: "docker",
 			path:    "Dockerfile",
