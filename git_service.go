@@ -67,7 +67,7 @@ func buildGitlabURL(baseURL url.URL, filePath, branch string, line1, line2 int) 
 }
 
 // buildGooglesourceURL build URL for *.googlesource.com
-//  Format: https://code.googlesource.com/google-api-go-client/+/master/README.md#2
+//  Format: https://code.googlesource.com/<repos>/+/<branch>/file.txt#2
 func buildGooglesourceURL(baseURL url.URL, filePath, branch string, line1, line2 int) string {
 	filePath = strings.TrimLeft(filePath, "/")
 
