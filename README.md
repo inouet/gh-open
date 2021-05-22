@@ -99,3 +99,4 @@ $ git config gh-open.protocol http
 * https://github.com/
 * https://gitlab.com/
 * https://bitbucket.org/
+* [https://*.googlesource.com/](https://code.googlesource.com/)
