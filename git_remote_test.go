@@ -139,7 +139,7 @@ func TestConfig(t *testing.T) {
 	git, _ = newGit(path)
 
 	// set config
-	git.exec("config", gitConfigUrlTypeName, "bitbucket.org")
+	git.exec("config", gitConfigURLTypeName, "bitbucket.org")
 	git.exec("config", gitConfigProtocolName, "http")
 
 	gr, err := newGitRemote(filepath.Join(path, "LICENSE"))

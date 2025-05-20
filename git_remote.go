@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	gitConfigUrlTypeName  string = "gh-open.urltype"
+	gitConfigURLTypeName  string = "gh-open.urltype"
 	gitConfigProtocolName string = "gh-open.protocol"
 )
 
@@ -94,7 +94,7 @@ func (r GitRemote) remoteURL(branch string, line1, line2 int) (string, error) {
 
 	// If it cannot be determined from the remote domain,
 	//   read the setting from git config and make a judgment based on it.
-	urlType := r.git.getConfig(gitConfigUrlTypeName, "")
+	urlType := r.git.getConfig(gitConfigURLTypeName, "")
 	scheme := r.git.getConfig(gitConfigProtocolName, "https")
 
 	// Try to handle special SSH URL format with organization ID (org-ID@github.com:user/repo.git)
