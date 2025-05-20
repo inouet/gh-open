@@ -2,16 +2,17 @@ package main
 
 import (
 	"errors"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"testing"
+
+	vcsurl "github.com/gitsight/go-vcsurl"
 )
 
 func mkTempDir() string {
 	tmpDir := os.TempDir()
-	testDir, err := ioutil.TempDir(tmpDir, "tests-*")
+	testDir, err := os.MkdirTemp(tmpDir, "tests-*")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -235,5 +236,150 @@ func TestGetLineOption(t *testing.T) {
 		if line1 != c.wantLine1 || line2 != c.wantLine2 {
 			t.Errorf("'%s' wantErr %v, got %v\n", c.input, c.wantErr, err)
 		}
+	}
+}
+
+// TestParseSSHRemoteURL tests if SSH format remote URLs can be parsed correctly
+func TestParseSSHRemoteURL(t *testing.T) {
+	// Standard SSH URLs
+	standardCases := []struct {
+		name       string
+		remoteURL  string
+		wantHost   string
+		wantUser   string
+		wantRepo   string
+		shouldFail bool
+	}{
+		{
+			name:      "standard ssh format",
+			remoteURL: "git@github.com:inouet/gh-open.git",
+			wantHost:  "github.com",
+			wantUser:  "inouet",
+			wantRepo:  "gh-open",
+		},
+		{
+			name:      "standard ssh format without .git",
+			remoteURL: "git@github.com:inouet/gh-open",
+			wantHost:  "github.com",
+			wantUser:  "inouet",
+			wantRepo:  "gh-open",
+		},
+		{
+			name:      "gitlab ssh format",
+			remoteURL: "git@gitlab.com:username/repository.git",
+			wantHost:  "gitlab.com",
+			wantUser:  "username",
+			wantRepo:  "repository",
+		},
+		{
+			name:      "bitbucket ssh format",
+			remoteURL: "git@bitbucket.org:username/repository.git",
+			wantHost:  "bitbucket.org",
+			wantUser:  "username",
+			wantRepo:  "repository",
+		},
+	}
+
+	// Test standard SSH URLs with vcsurl.Parse
+	for _, c := range standardCases {
+		t.Run(c.name, func(t *testing.T) {
+			info, err := vcsurl.Parse(c.remoteURL)
+
+			if c.shouldFail {
+				if err == nil {
+					t.Errorf("expected error but got none for %s", c.remoteURL)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("failed to parse %s: %v", c.remoteURL, err)
+			}
+
+			if string(info.Host) != c.wantHost {
+				t.Errorf("host: want %s, got %s", c.wantHost, info.Host)
+			}
+
+			if info.Username != c.wantUser {
+				t.Errorf("username: want %s, got %s", c.wantUser, info.Username)
+			}
+
+			if info.Name != c.wantRepo {
+				t.Errorf("repo name: want %s, got %s", c.wantRepo, info.Name)
+			}
+
+			// Check if a correct web URL can be generated from the successfully parsed URL
+			expectedWebURL := "https://" + c.wantHost + "/" + c.wantUser + "/" + c.wantRepo
+			host := string(info.Host)
+			fullName := info.FullName
+			webURL := "https://" + host + "/" + fullName
+
+			if webURL != expectedWebURL {
+				t.Errorf("web URL: want %s, got %s", expectedWebURL, webURL)
+			}
+		})
+	}
+
+	// Organization format SSH URLs
+	orgCases := []struct {
+		name       string
+		remoteURL  string
+		wantHost   string
+		wantUser   string
+		wantRepo   string
+		shouldFail bool
+	}{
+		{
+			name:      "organization format with ID",
+			remoteURL: "org-3324601@github.com:complex/repo-name.git",
+			wantHost:  "github.com",
+			wantUser:  "complex",
+			wantRepo:  "repo-name",
+		},
+		{
+			name:      "complex organization name",
+			remoteURL: "org-complex_name-123@github.com:complex/repo-name.git",
+			wantHost:  "github.com",
+			wantUser:  "complex",
+			wantRepo:  "repo-name",
+		},
+	}
+
+	// Test organization format SSH URLs with custom function
+	for _, c := range orgCases {
+		t.Run(c.name, func(t *testing.T) {
+			host, username, repo, err := parseSSHRemoteURL(c.remoteURL)
+
+			if c.shouldFail {
+				if err == nil {
+					t.Errorf("expected error but got none for %s", c.remoteURL)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("failed to parse %s: %v", c.remoteURL, err)
+			}
+
+			if host != c.wantHost {
+				t.Errorf("host: want %s, got %s", c.wantHost, host)
+			}
+
+			if username != c.wantUser {
+				t.Errorf("username: want %s, got %s", c.wantUser, username)
+			}
+
+			if repo != c.wantRepo {
+				t.Errorf("repo name: want %s, got %s", c.wantRepo, repo)
+			}
+
+			// Check if a correct web URL can be generated from the successfully parsed URL
+			expectedWebURL := "https://" + c.wantHost + "/" + c.wantUser + "/" + c.wantRepo
+			webURL := "https://" + host + "/" + username + "/" + repo
+
+			if webURL != expectedWebURL {
+				t.Errorf("web URL: want %s, got %s", expectedWebURL, webURL)
+			}
+		})
 	}
 }
