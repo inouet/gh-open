@@ -10,11 +10,11 @@ import (
 	"strconv"
 	"strings"
 
-	giturls "github.com/whilp/git-urls"
+	vcsurl "github.com/gitsight/go-vcsurl"
 )
 
 const (
-	gitConfigUrlTypeName  string = "gh-open.urltype"
+	gitConfigURLTypeName  string = "gh-open.urltype"
 	gitConfigProtocolName string = "gh-open.protocol"
 )
 
@@ -22,6 +22,35 @@ const (
 type GitRemote struct {
 	git  *Git
 	path string // Relative path from git top directory
+}
+
+// Enhanced regex to match both standard git SSH URLs and organization format URLs
+var orgSSHRegex = regexp.MustCompile(`^(git|org-[a-zA-Z0-9_-]+)@([a-zA-Z0-9._-]+):([a-zA-Z0-9/_-]+)(/[a-zA-Z0-9/_-]+)*(.git)?$`)
+
+// parseSSHRemoteURL parses SSH remote URLs including both standard format and organization format
+// e.g. git@github.com:user/repo.git or org-1234@github.com:user/repo.git
+func parseSSHRemoteURL(remoteURL string) (host, username, repo string, err error) {
+	matches := orgSSHRegex.FindStringSubmatch(remoteURL)
+	if matches == nil {
+		return "", "", "", fmt.Errorf("invalid SSH remote URL format: %s", remoteURL)
+	}
+
+	host = matches[2]
+	repoPath := matches[3]
+
+	// Remove .git suffix if present
+	repoPath = strings.TrimSuffix(repoPath, ".git")
+
+	// Split the path into username and repo name
+	parts := strings.Split(repoPath, "/")
+	if len(parts) < 2 {
+		return "", "", "", fmt.Errorf("invalid repository path: %s", repoPath)
+	}
+
+	username = parts[0]
+	repo = parts[len(parts)-1]
+
+	return host, username, repo, nil
 }
 
 func newGitRemote(objectPath string) (*GitRemote, error) {
@@ -65,20 +94,52 @@ func (r GitRemote) remoteURL(branch string, line1, line2 int) (string, error) {
 
 	// If it cannot be determined from the remote domain,
 	//   read the setting from git config and make a judgment based on it.
-	urlType := r.git.getConfig(gitConfigUrlTypeName, "")
+	urlType := r.git.getConfig(gitConfigURLTypeName, "")
 	scheme := r.git.getConfig(gitConfigProtocolName, "https")
 
-	url, err := giturls.Parse(remote)
+	// Try to handle special SSH URL format with organization ID (org-ID@github.com:user/repo.git)
+	if strings.Contains(remote, "@") && strings.Contains(remote, ":") && !strings.HasPrefix(remote, "git@") {
+		host, username, repo, err := parseSSHRemoteURL(remote)
+		if err == nil {
+			// Create URL object
+			newURL := neturl.URL{
+				Scheme: scheme,
+				Host:   host,
+				Path:   "/" + username + "/" + repo,
+			}
+
+			if r.path == "" && branch == "" {
+				return newURL.String(), nil
+			}
+
+			if branch == "" {
+				branch, err = r.git.getCommitHash()
+				if err != nil {
+					return "", err
+				}
+			}
+
+			remoteURL, err := buildURL(newURL, r.path, branch, line1, line2, urlType)
+			if err != nil {
+				return "", err
+			}
+
+			return remoteURL, nil
+		}
+		// If parsing fails, fall back to the standard method
+	}
+
+	// Parse with gitsight/go-vcsurl for standard formats
+	info, err := vcsurl.Parse(remote)
 	if err != nil {
 		return "", err
 	}
 
-	// remove .git from /inouet/gh-open.git
-	path := strings.TrimSuffix(url.Path, ".git")
+	// Create new URL with the parsed information
 	newURL := neturl.URL{
 		Scheme: scheme,
-		Host:   url.Host,
-		Path:   path,
+		Host:   string(info.Host),
+		Path:   "/" + info.FullName,
 	}
 
 	if r.path == "" && branch == "" {
